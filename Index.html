@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora Pro Rata</title>
+    <!-- Favicon - Icone da Guia -->
+    <link rel="icon" href="https://yt3.googleusercontent.com/ytc/AIdro_lEiXnFMhOsIZpQCQ9DaGTA2CNEWFGtKHYnrLBhfYsBC3NA=s900-c-k-c0x00ffffff-no-rj" type="image/png">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5; /* Fundo cinza claro */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* Ocupa a altura total da tela */
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* Estilo básico para elementos interativos (botões) */
+        .interactive-element {
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+        }
+        .interactive-element:active {
+            transform: scale(0.98); /* Pequeno efeito de clique */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4 sm:p-6">
+
+    <div class="bg-white p-8 rounded-2xl shadow-xl max-w-sm w-full text-center">
+        <!-- Imagem adicionada -->
+        <img
+            src="https://yt3.googleusercontent.com/ytc/AIdro_lEiXnFMhOsIZpQCQ9DaGTA2CNEWFGtKHYnrLBhfYsBC3NA=s900-c-k-c0x00ffffff-no-rj"
+            alt="Imagem Ilustrativa"
+            class="w-32 h-32 mx-auto mb-6 rounded-full object-cover shadow-lg"
+            onerror="this.onerror=null;this.src='https://placehold.co/128x128/cccccc/333333?text=Imagem+indisponível';"
+        >
+
+        <!-- Título Principal -->
+        <h1 class="text-3xl font-bold text-gray-800 mb-4">Pro Rata</h1>
+
+        <!-- Parágrafo introdutório geral -->
+        <h2 class="text-xl font-bold text-gray-800 mb-4">
+            Selecione uma opção abaixo para calcular o Pro Rata:
+        </h2>
+
+        <!-- Seção para Banda Larga -->
+        <div class="space-y-4 mb-6"> <!-- Adiciona espaço entre as seções e entre os elementos -->
+            <p class="text-gray-700 font-medium">
+                Para o cálculo do Pro Rata de <b>Banda Larga</b>:
+            </p>
+            <button class="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 interactive-element" onclick="abrirPaginaBL()"	>
+                Calcular Banda Larga
+            </button>
+        </div>
+
+        <!-- Seção para Móvel -->
+        <div class="space-y-4">
+            <p class="text-gray-700 font-medium">
+                Para o cálculo do Pro Rata de <b>Móvel</b>:
+            </p>
+            <button class="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 interactive-element" onclick="abrirPaginaMOVEL()">
+                Calcular Móvel
+            </button>
+        </div>
+
+        <!-- Footer Section -->
+        <footer class="mt-4 pt-2 border-t border-gray-200 text-center text-gray-500 text-xs">
+            <p class="mb-0">PAP INDIRETO</p>
+            <p>Breno Cardoso</p>
+        </footer>
+    </div>
+
+</body>
+
+<script>
+  function abrirPaginaBL() {
+    window.location.href = "calcBL.html";
+  }
+  function abrirPaginaMOVEL() {
+    window.location.href = "calcMOVEL.html";
+  } 
+</script>
+</html>

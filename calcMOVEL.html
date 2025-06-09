@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora Pro Rata</title>
+    <link rel="icon" href="https://yt3.googleusercontent.com/ytc/AIdro_lEiXnFMhOsIZpQCQ9DaGTA2CNEWFGtKHYnrLBhfYsBC3NA=s900-c-k-c0x00ffffff-no-rj" type="image/png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5; /* Fundo cinza claro */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* Ocupa a altura total da tela */
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* Estilo básico para elementos interativos (botões e inputs) */
+        .interactive-element {
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+        }
+        .interactive-element:active {
+            transform: scale(0.98); /* Pequeno efeito de clique */
+        }
+
+        /* Oculta o radio button padrão */
+        input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        /* Estilo para o label que se comporta como o botão de rádio (pílula) */
+        input[type="radio"] + label {
+            display: inline-flex; /* Para centralizar o texto */
+            align-items: center;
+            justify-content: center; /* Corrected typo: justify-content */
+            min-width: 48px; /* Largura da pílula */
+            height: 32px; /* Altura da pílula */
+            padding: 4px 12px; /* Espaçamento interno */
+            background-color: #e2e8f0; /* bg-gray-200, cor de fundo para não selecionado */
+            border: 1px solid #cbd5e1; /* border-gray-300 */
+            border-radius: 9999px; /* Extremamente arredondado para formar a pílula */
+            cursor: pointer;
+            font-size: 1rem; /* Tamanho da fonte do número */
+            color: #4a5568; /* text-gray-700, cor do texto para não selecionado */
+            transition: all 0.2s ease;
+        }
+
+        /* Estilo quando o radio button está selecionado */
+        input[type="radio"]:checked + label {
+            background-color: #3b82f6; /* bg-blue-500, cor de fundo para selecionado */
+            border-color: #3b82f6; /* border-blue-500 */
+            color: #ffffff; /* Cor do texto para selecionado */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Sombra para o selecionado */
+        }
+
+        /* Estilo de hover */
+        input[type="radio"] + label:hover {
+            background-color: #d1d5db; /* bg-gray-300 */
+        }
+        input[type="radio"]:checked + label:hover {
+            background-color: #2563eb; /* bg-blue-600 */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4 sm:p-6">
+
+    <div class="bg-white p-8 rounded-2xl shadow-xl max-w-sm w-full text-center">
+        <img
+            src="https://yt3.googleusercontent.com/ytc/AIdro_lEiXnFMhOsIZpQCQ9DaGTA2CNEWFGtKHYnrLBhfYsBC3NA=s900-c-k-c0x00ffffff-no-rj"
+            alt="Logo ProRata"
+            class="w-32 h-32 mx-auto mb-6 rounded-full object-cover shadow-lg"
+            onerror="this.onerror=null;this.src='https://placehold.co/128x128/cccccc/333333?text=Imagem+indisponível';"
+        >
+
+        <h1 class="text-3xl font-bold text-gray-800 mb-8">ProRata</h1>
+
+        <div class="mb-6">
+            <p class="text-gray-700 font-medium text-lg mb-2">
+                Insira o valor da fatura da MÓVEL:
+            </p>
+            <input
+                type="text"
+                id="valorFatura"
+                placeholder="Valor da fatura..."
+                class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 interactive-element"
+            >
+        </div>
+
+        <div class="mb-8">
+            <p class="text-gray-700 font-medium text-lg mb-2">
+                Insira a data de instalação:
+            </p>
+            <input
+                type="text"
+                id="dataInstalacao"
+                placeholder="DD/MM/AAAA"
+                class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 interactive-element"
+            >
+            <span id="dataError" class="text-red-500 text-sm mt-1 block h-4"></span>
+        </div>
+
+        <div class="flex justify-center items-center space-x-2 mb-8" id="radioButtonsContainer">
+            <div>
+                <input type="radio" id="option5" name="days" value="5">
+                <label for="option5">5</label>
+            </div>
+            <div>
+                <input type="radio" id="option8" name="days" value="8">
+                <label for="option8">8</label>
+            </div>
+            <div>
+                <input type="radio" id="option10" name="days" value="10">
+                <label for="option10">10</label>
+            </div>
+            <div>
+                <input type="radio" id="option15" name="days" value="15">
+                <label for="option15">15</label>
+            </div>
+            <div>
+                <input type="radio" id="option20" name="days" value="20">
+                <label for="option20">20</label>
+            </div>
+            <div>
+                <input type="radio" id="option25" name="days" value="25">
+                <label for="option25">25</label>
+            </div>
+        </div>
+
+        <div class="mb-8">
+            <p class="text-gray-700 font-medium text-lg mb-2">
+                Valor estimado de Pro Rata:
+            </p>
+            <p class="text-4xl font-bold text-blue-600" id="proRataValue">
+                R$ XXX,xx
+            </p>
+        </div>
+
+        <footer class="mt-2 pt-4 border-t border-gray-200 text-center text-gray-500 text-xs">
+            <p class="mb-0">by Breno Cardoso</p>
+            <p>Canal PAP INDIRETO</p>
+        </footer>
+    </div>
+
+    <script>
+        let proRataData = null; // Variável para armazenar os dados do JSON
+
+        // Referências aos elementos HTML
+        const valorFaturaInput = document.getElementById('valorFatura');
+        const dataInstalacaoInput = document.getElementById('dataInstalacao');
+        const proRataValueDisplay = document.getElementById('proRataValue');
+        const dataErrorSpan = document.getElementById('dataError');
+        const radioButtonsContainer = document.getElementById('radioButtonsContainer');
+
+        /**
+         * Reseta o valor estimado de Pro Rata para o padrão.
+         */
+        function resetProRataDisplay() {
+            proRataValueDisplay.innerText = 'R$ XXX,xx';
+        }
+
+        /**
+         * Busca os dados do JSON externo.
+         */
+        async function fetchProRataData() {
+            resetProRataDisplay(); // Reseta o display antes de carregar
+            proRataValueDisplay.innerText = 'Carregando...'; // Exibe mensagem de carregamento
+
+            try {
+                const response = await fetch('https://api.npoint.io/147ece40a4c63984fce6');
+                if (!response.ok) {
+                    throw new Error(`Erro ao carregar dados: ${response.statusText}`);
+                }
+                proRataData = await response.json();
+                console.log('Dados Pro Rata carregados:', proRataData);
+                calculateProRata(); // Tenta calcular após carregar os dados
+            } catch (error) {
+                console.error('Erro ao buscar dados Pro Rata:', error);
+                proRataValueDisplay.innerText = 'Erro ao carregar dados.';
+            }
+        }
+
+        /**
+         * Calcula o valor do Pro Rata com base nas entradas e dados do JSON.
+         */
+        function calculateProRata() {
+            if (!proRataData) {
+                console.log('Dados Pro Rata ainda não carregados.');
+                // If data isn't loaded, try to fetch it. This ensures if user types then clicks radio, it works.
+                fetchProRataData();
+                return;
+            }
+
+            // Pega o valor da fatura
+            let valorFaturaStr = valorFaturaInput.value.replace(',', '.'); // Substitui vírgula por ponto
+            const valorFatura = parseFloat(valorFaturaStr);
+
+            // Pega a data de instalação
+            const dataInstalacaoStr = dataInstalacaoInput.value;
+
+            // Pega o dia selecionado no radio button
+            const selectedRadio = document.querySelector('input[name="days"]:checked');
+            const selectedDayKey = selectedRadio ? selectedRadio.value : null;
+
+            // Valida as entradas antes de calcular
+            if (isNaN(valorFatura) || valorFatura <= 0 || dataInstalacaoStr.length !== 10 || dataErrorSpan.innerText !== '' || !selectedDayKey) {
+                resetProRataDisplay();
+                return;
+            }
+
+            // Parseia a data de instalação para um objeto Date
+            const parts = dataInstalacaoStr.split('/');
+            const dayInst = parseInt(parts[0], 10);
+            const monthInst = parseInt(parts[1], 10);
+            const yearInst = parseInt(parts[2], 10);
+            const instalationDate = new Date(yearInst, monthInst - 1, dayInst);
+
+            // Pega o dia de fechamento do JSON (AGORA USANDO "MOVEL" PARA ESTA PÁGINA)
+            const closingDay = proRataData.MOVEL[selectedDayKey]; // <-- CHANGED from BL to MOVEL
+
+            if (closingDay === undefined) {
+                console.error('Dia de fechamento não encontrado para a opção selecionada:', selectedDayKey);
+                resetProRataDisplay();
+                return;
+            }
+
+            let closingDate = new Date(instalationDate.getFullYear(), instalationDate.getMonth(), closingDay);
+
+            // If the calculated closing date is before or on the installation date (in the same month),
+            // assume it's for the next month's cycle.
+            if (closingDate <= instalationDate) {
+                closingDate = new Date(instalationDate.getFullYear(), instalationDate.getMonth() + 1, closingDay);
+            }
+
+            // Calculate the difference in days
+            const diffTime = closingDate.getTime() - instalationDate.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); // Difference in days
+
+            if (diffDays < 0) {
+                resetProRataDisplay();
+                return;
+            }
+
+            // Calculate Pro Rata
+            const proRataCalculated = (valorFatura / 30) * diffDays;
+
+            // Format and display the result
+            proRataValueDisplay.innerText = `R$ ${proRataCalculated.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        }
+
+        // Add event listeners
+        valorFaturaInput.addEventListener('input', function (e) {
+            let value = e.target.value;
+
+            // Remove all characters that are not numbers or comma
+            value = value.replace(/[^0-9,]/g, '');
+
+            // Allow only one comma and limit to two decimal places
+            const parts = value.split(',');
+            if (parts.length > 2) {
+                value = parts[0] + ',' + parts.slice(1).join('');
+            }
+            if (parts.length === 2 && parts[1].length > 2) {
+                value = parts[0] + ',' + parts[1].substring(0, 2);
+            }
+
+            e.target.value = value;
+            calculateProRata(); // Calculate on input change
+        });
+
+        dataInstalacaoInput.addEventListener('input', function (e) {
+            let value = e.target.value;
+            dataErrorSpan.innerText = ''; // Clear previous errors
+            e.target.classList.remove('border-red-500'); // Remove error border
+
+            // Remove all characters that are not numbers
+            value = value.replace(/\D/g, '');
+
+            // Add slashes automatically
+            if (value.length > 2) {
+                value = value.substring(0, 2) + '/' + value.substring(2);
+            }
+            if (value.length > 5) {
+                value = value.substring(0, 5) + '/' + value.substring(5);
+            }
+
+            // Limit the total string length to 10 characters (DD/MM/YYYY)
+            if (value.length > 10) {
+                value = value.substring(0, 10);
+            }
+
+            e.target.value = value;
+            calculateProRata(); // Calculate immediately on input, even if partial
+        });
+
+        dataInstalacaoInput.addEventListener('blur', function (e) {
+            const value = e.target.value;
+            dataErrorSpan.innerText = '';
+            e.target.classList.remove('border-red-500');
+
+            if (value.length === 10) {
+                const parts = value.split('/');
+                const day = parseInt(parts[0], 10);
+                const month = parseInt(parts[1], 10);
+                const year = parseInt(parts[2], 10);
+
+                const inputDate = new Date(year, month - 1, day);
+
+                // Check if the date is invalid (e.g., Feb 30th)
+                if (isNaN(inputDate.getTime()) || inputDate.getDate() !== day || inputDate.getMonth() !== (month - 1) || inputDate.getFullYear() !== year) {
+                    dataErrorSpan.innerText = 'Data inválida.';
+                    e.target.classList.add('border-red-500');
+                    resetProRataDisplay(); // Reset display if date is invalid
+                    return;
+                }
+
+                const currentDate = new Date();
+                currentDate.setHours(0, 0, 0, 0); // Zero out time for comparison
+                inputDate.setHours(0, 0, 0, 0);
+
+                const diffTime = currentDate.getTime() - inputDate.getTime();
+                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); // Use floor for full days difference
+
+                // Check if date is older than 7 days; future dates are now allowed.
+                if (diffDays > 7) {
+                    dataErrorSpan.innerText = 'Data não pode ser mais antiga que 7 dias.';
+                    e.target.classList.add('border-red-500');
+                    resetProRataDisplay(); // Reset display if date is too old
+                } else {
+                    calculateProRata(); // Calculate if the date is valid and within range
+                }
+            } else if (value.length > 0) { // If something was typed but not a full date
+                dataErrorSpan.innerText = 'Formato de data inválido (DD/MM/AAAA).';
+                e.target.classList.add('border-red-500');
+                resetProRataDisplay();
+            } else { // If input is empty after blur
+                resetProRataDisplay();
+            }
+        });
+
+        // Add an event listener for the radio buttons
+        radioButtonsContainer.addEventListener('change', function(e) {
+            if (e.target.name === 'days' && e.target.type === 'radio') {
+                fetchProRataData(); // Fetch data and recalculate when a radio button is selected
+            }
+        });
+
+        // Initial fetch on page load
+        document.addEventListener('DOMContentLoaded', fetchProRataData);
+    </script>
+</body>
+</html>
