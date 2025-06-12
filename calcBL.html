@@ -88,11 +88,14 @@
                 Insira o valor da fatura da BL:
             </p>
             <input
-                type="text"
-                id="valorFatura"
-                placeholder="Valor da fatura..."
-                class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 interactive-element"
-            >
+        type="text"
+        id="valorFatura"
+        placeholder="Valor da fatura..."
+        class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 interactive-element text-left"
+        inputmode="numeric"
+        pattern="[0-9]*"
+        maxlength="15"
+    >
         </div>
 
         <div class="mb-8">
@@ -100,7 +103,7 @@
                 Insira a data de instalação:
             </p>
             <input
-                type="date" {# CHANGED TYPE TO "DATE" FOR CALENDAR #}
+                type="date"
                 id="dataInstalacao"
                 class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 interactive-element"
             >
@@ -201,8 +204,14 @@
             }
 
             // Pega o valor da fatura
-            let valorFaturaStr = valorFaturaInput.value.replace(',', '.'); // Substitui vírgula por ponto
-            const valorFatura = parseFloat(valorFaturaStr);
+            // Clean the input from 'R$', '.', and replace ',' with '.' for parseFloat
+            const valorFaturaClean = valorFaturaInput.value
+                .replace('R$', '')
+                .replace(/\./g, '')
+                .replace(',', '.')
+                .trim();
+            
+            const valorFatura = parseFloat(valorFaturaClean);
 
             // Pega a data de instalação (YYYY-MM-DD from type="date")
             const dataInstalacaoStr = dataInstalacaoInput.value;
@@ -237,9 +246,6 @@
 
             // If the calculated closing date is before or on the installation date (in the same month),
             // assume it's for the next month's cycle.
-            // Example: Installation 28/05, Closing Day 25. First calculation gives 25/05.
-            // Since 25/05 <= 28/05, it means the closing date for this cycle has passed,
-            // so we calculate for the next cycle (25/06).
             if (closingDate <= instalationDate) {
                 closingDate = new Date(instalationDate.getFullYear(), instalationDate.getMonth() + 1, closingDay);
             }
@@ -248,7 +254,7 @@
             const diffTime = closingDate.getTime() - instalationDate.getTime();
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); // Difference in days
 
-            if (diffDays < 0) { // This should ideally not happen with the logic above, but as a safeguard.
+            if (diffDays < 0) {
                 resetProRataDisplay();
                 return;
             }
@@ -260,33 +266,74 @@
             proRataValueDisplay.innerText = `R$ ${proRataCalculated.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         }
 
-        // Add event listeners
-        valorFaturaInput.addEventListener('input', function (e) {
-            let value = e.target.value;
+        // --- NEW JAVASCRIPT FOR CURRENCY FORMATTING ---
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set initial value when the page loads
+            valorFaturaInput.value = 'R$ 0,00';
 
-            // Remove all characters that are not numbers or comma
-            value = value.replace(/[^0-9,]/g, '');
+            valorFaturaInput.addEventListener('input', function(event) {
+                let value = valorFaturaInput.value;
 
-            // Allow only one comma and limit to two decimal places
-            const parts = value.split(',');
-            if (parts.length > 2) {
-                value = parts[0] + ',' + parts.slice(1).join('');
-            }
-            if (parts.length === 2 && parts[1].length > 2) {
-                value = parts[0] + ',' + parts[1].substring(0, 2);
-            }
+                // 1. Remove all non-numeric characters (including 'R$', '.')
+                value = value.replace(/\D/g, '');
 
-            e.target.value = value;
-            calculateProRata(); // Calculate on input change
+                if (value === '') {
+                    valorFaturaInput.value = '';
+                    calculateProRata(); // Recalculate if cleared
+                    return;
+                }
+
+                // 2. Convert to a number and format as currency
+                // We treat the input as cents/centavos by dividing by 100
+                let numberValue = parseInt(value, 10) / 100;
+
+                // Use Intl.NumberFormat for robust currency formatting
+                const formatter = new Intl.NumberFormat('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL',
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+
+                // Format the number
+                let formattedValue = formatter.format(numberValue);
+
+                // Update the input field
+                valorFaturaInput.value = formattedValue;
+                calculateProRata(); // Recalculate on input change
+            });
+
+            valorFaturaInput.addEventListener('blur', function() {
+                let value = valorFaturaInput.value;
+                if (value === '' || value === 'R$') {
+                    valorFaturaInput.value = 'R$ 0,00';
+                } else {
+                    // Re-apply formatting just in case something went wrong or user typed something weird
+                    value = value.replace(/\D/g, ''); // Clean to only digits
+                    if (value === '') {
+                        valorFaturaInput.value = 'R$ 0,00';
+                        calculateProRata();
+                        return;
+                    }
+                    let numberValue = parseInt(value, 10) / 100;
+                    const formatter = new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
+                    valorFaturaInput.value = formatter.format(numberValue);
+                }
+                calculateProRata(); // Recalculate on blur
+            });
         });
+        // --- END NEW JAVASCRIPT FOR CURRENCY FORMATTING ---
 
         // Event listener for type="date" input
         dataInstalacaoInput.addEventListener('input', function(e) {
-            // When using type="date", the browser handles the formatting and basic validation.
-            // We just need to trigger calculation if a value exists.
             if (e.target.value) {
                 calculateProRata();
-                dataErrorSpan.innerText = ''; // Clear any previous errors on valid input
+                dataErrorSpan.innerText = '';
                 e.target.classList.remove('border-red-500');
             } else {
                 resetProRataDisplay();
@@ -295,11 +342,11 @@
 
         // Blur event listener for dataInstalacaoInput (with YYYY-MM-DD format)
         dataInstalacaoInput.addEventListener('blur', function (e) {
-            const value = e.target.value; // This will be in YYYY-MM-DD format
+            const value = e.target.value;
             dataErrorSpan.innerText = '';
             e.target.classList.remove('border-red-500');
 
-            if (value) { // Check if a date was selected
+            if (value) {
                 const parts = value.split('-');
                 const year = parseInt(parts[0], 10);
                 const month = parseInt(parts[1], 10);
@@ -307,7 +354,6 @@
 
                 const inputDate = new Date(year, month - 1, day);
 
-                // Check if the date is invalid (e.g., Feb 30th)
                 if (isNaN(inputDate.getTime()) || inputDate.getDate() !== day || inputDate.getMonth() !== (month - 1) || inputDate.getFullYear() !== year) {
                     dataErrorSpan.innerText = 'Data inválida.';
                     e.target.classList.add('border-red-500');
@@ -316,21 +362,24 @@
                 }
 
                 const currentDate = new Date();
-                currentDate.setHours(0, 0, 0, 0); // Zero out time for comparison
+                currentDate.setHours(0, 0, 0, 0);
                 inputDate.setHours(0, 0, 0, 0);
 
                 const diffTime = currentDate.getTime() - inputDate.getTime();
-                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); // Use floor for full days difference
+                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
-                // Check if date is older than 7 days; future dates are now allowed.
-                if (diffDays > 7) {
+                // June 12, 2025 (current date)
+                const sevenDaysAgo = new Date(currentDate);
+                sevenDaysAgo.setDate(currentDate.getDate() - 7);
+
+                if (inputDate < sevenDaysAgo) { // Check if inputDate is *before* 7 days ago
                     dataErrorSpan.innerText = 'Data não pode ser mais antiga que 7 dias.';
                     e.target.classList.add('border-red-500');
-                    resetProRataDisplay(); // Reset display if date is too old
+                    resetProRataDisplay();
                 } else {
-                    calculateProRata(); // Calculate if the date is valid and within range
+                    calculateProRata();
                 }
-            } else { // If input is empty after blur
+            } else {
                 resetProRataDisplay();
             }
         });
@@ -338,7 +387,7 @@
         // Add an event listener for the radio buttons
         radioButtonsContainer.addEventListener('change', function(e) {
             if (e.target.name === 'days' && e.target.type === 'radio') {
-                fetchProRataData(); // Fetch data on radio button change
+                fetchProRataData();
             }
         });
     </script>
