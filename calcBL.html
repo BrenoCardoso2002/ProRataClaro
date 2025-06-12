@@ -7,7 +7,6 @@
     <link rel="icon" href="./logoProRata.jpg" type="image/png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -90,7 +89,6 @@
             </p>
             <input
                 type="text"
-                inputmode="decimal"
                 id="valorFatura"
                 placeholder="Valor da fatura..."
                 class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 interactive-element"
@@ -109,8 +107,9 @@
             >
             <span id="dataError" class="text-red-500 text-sm mt-1 block h-4"></span>
         </div>
+
         
-        <p class="text-gray-700 font-medium text-lg mb-2">
+         <p class="text-gray-700 font-medium text-lg mb-2">
             Escolha a data de vencimento:
         </p>
         <div class="flex justify-center items-center space-x-2 mb-8" id="radioButtonsContainer">
@@ -155,8 +154,7 @@
         </footer>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script> <script>
+    <script>
         let proRataData = null; // Variável para armazenar os dados do JSON
 
         // Referências aos elementos HTML
@@ -165,17 +163,6 @@
         const proRataValueDisplay = document.getElementById('proRataValue');
         const dataErrorSpan = document.getElementById('dataError');
         const radioButtonsContainer = document.getElementById('radioButtonsContainer');
-
-        // Initialize Flatpickr for the date input
-        flatpickr(dataInstalacaoInput, {
-            dateFormat: "d/m/Y", // DD/MM/YYYY format
-            locale: "pt", // Set locale to Portuguese
-            allowInput: true, // Allow manual input but still use calendar
-            onClose: function(selectedDates, dateStr, instance) {
-                // Manually trigger blur event to run validation
-                dataInstalacaoInput.dispatchEvent(new Event('blur'));
-            }
-        });
 
         /**
          * Reseta o valor estimado de Pro Rata para o padrão.
@@ -211,6 +198,9 @@
         function calculateProRata() {
             if (!proRataData) {
                 console.log('Dados Pro Rata ainda não carregados.');
+                // You might want to initiate a fetch here if it hasn't been fetched at all,
+                // or just wait for the next radio button click if that's the intended trigger.
+                // For now, we'll rely on the radio button click to initiate fetch if proRataData is null.
                 resetProRataDisplay();
                 return;
             }
@@ -295,16 +285,31 @@
             calculateProRata(); // Calculate on input change
         });
 
-        // The date input `input` listener is no longer needed for formatting
-        // as Flatpickr handles the date format and validation
         dataInstalacaoInput.addEventListener('input', function (e) {
-            // This listener will now primarily trigger calculation
-            // after Flatpickr updates the input value.
-            // Manual formatting is handled by Flatpickr.
+            let value = e.target.value;
             dataErrorSpan.innerText = ''; // Clear previous errors
             e.target.classList.remove('border-red-500'); // Remove error border
-            if (e.target.value.length === 10) { // Only calculate if a full date is present
-                 calculateProRata();
+
+            // Remove all characters that are not numbers
+            value = value.replace(/\D/g, '');
+
+            // Add slashes automatically
+            if (value.length > 2) {
+                value = value.substring(0, 2) + '/' + value.substring(2);
+            }
+            if (value.length > 5) {
+                value = value.substring(0, 5) + '/' + value.substring(5);
+            }
+
+            // Limit the total string length to 10 characters (DD/MM/YYYY)
+            if (value.length > 10) {
+                value = value.substring(0, 10);
+            }
+
+            e.target.value = value;
+            // Trigger calculation only if valid date is entered to avoid premature calculations
+            if (value.length === 10 && dataErrorSpan.innerText === '') {
+                calculateProRata();
             } else {
                 resetProRataDisplay();
             }
@@ -358,12 +363,12 @@
         // Add an event listener for the radio buttons
         radioButtonsContainer.addEventListener('change', function(e) {
             if (e.target.name === 'days' && e.target.type === 'radio') {
-                fetchProRataData(); // Fetch data on radio button change
+                fetchProRataData(); // *** This is the key change: fetch data on radio button change ***
             }
         });
 
-        // Initial fetch of Pro Rata data when the page loads
-        document.addEventListener('DOMContentLoaded', fetchProRataData);
+        // Removed the initial fetch on DOMContentLoaded
+        // document.addEventListener('DOMContentLoaded', fetchProRataData);
     </script>
 </body>
 </html>
