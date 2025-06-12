@@ -89,9 +89,8 @@
                 Insira o valor da fatura da BL:
             </p>
             <input
-                type="number" inputmode="decimal" id="valorFatura"
-                placeholder="Valor da fatura..."
-                class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 interactive-element"
+                type="text" inputmode="decimal" id="valorFatura"
+                placeholder="R$ 0,00" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 interactive-element"
             >
         </div>
 
@@ -100,7 +99,8 @@
                 Insira a data de instalação:
             </p>
             <input
-                type="text" id="dataInstalacao"
+                type="text"
+                id="dataInstalacao"
                 placeholder="DD/MM/AAAA"
                 class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 interactive-element"
             >
@@ -213,7 +213,11 @@
             }
 
             // Pega o valor da fatura
-            let valorFaturaStr = valorFaturaInput.value.replace(',', '.'); // Substitui vírgula por ponto
+            // Remove 'R$', dots, and replace comma with dot for calculation
+            let valorFaturaStr = valorFaturaInput.value
+                                    .replace('R$', '')
+                                    .replace(/\./g, '') // Remove thousands separators
+                                    .replace(',', '.'); // Replace comma with dot for parseFloat
             const valorFatura = parseFloat(valorFaturaStr);
 
             // Pega a data de instalação
@@ -276,27 +280,56 @@
         valorFaturaInput.addEventListener('input', function (e) {
             let value = e.target.value;
 
-            // Ensure only numbers and a single comma/dot are allowed
-            value = value.replace(/[^0-9.,]/g, ''); // Allow numbers, comma, and dot
-            
-            // Normalize to use dot as decimal separator for parseFloat
-            value = value.replace(',', '.'); 
+            // Remove all non-numeric characters except comma
+            value = value.replace(/[^0-9,]/g, '');
 
-            // Allow only one decimal point
-            const parts = value.split('.');
+            // Handle comma as decimal separator
+            const parts = value.split(',');
             if (parts.length > 2) {
-                value = parts[0] + '.' + parts.slice(1).join('');
+                value = parts[0] + ',' + parts.slice(1).join(''); // Allow only one comma
             }
 
-            // Limit to two decimal places
+            // Limit to two decimal places after the comma
             if (parts.length === 2 && parts[1].length > 2) {
-                value = parts[0] + '.' + parts[1].substring(0, 2);
+                value = parts[0] + ',' + parts[1].substring(0, 2);
             }
 
-            // Convert back to comma for display if needed (optional, parseFloat handles dot)
-            e.target.value = value.replace('.', ','); // Display with comma for user
-            calculateProRata(); // Calculate on input change
+            // Convert to a number for proper formatting
+            let numericValue = parseFloat(value.replace(',', '.')) || 0; // Use parseFloat with dot for conversion
+
+            // Format as Brazilian currency
+            // This formatter will add thousands separators and decimal comma automatically
+            const formatter = new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+
+            // If the input is just "R$", "R$ 0", or empty, clear it or set to "R$ 0,00"
+            // This prevents an awkward "R$ NaN" or similar display
+            if (value === '' || value === ',' || numericValue === 0 && (value !== '0' && value !== '0,' && value !== '0,0' && value !== '0.0')) {
+                e.target.value = ''; // Keep input empty if user deletes everything
+            } else {
+                 let formattedValue = formatter.format(numericValue);
+
+                // Preserve decimal part while typing if user is still entering it
+                // e.g., if user types "123,", keep "R$ 123,"
+                if (value.endsWith(',')) {
+                    // Check if the formatted value already includes the comma and 00 cents.
+                    // If it does, we need to manually remove the '00' to allow typing after comma.
+                    // This is a bit of a hack as toLocaleString adds trailing zeros
+                    if (formattedValue.endsWith(',00')) {
+                        formattedValue = formattedValue.slice(0, -2); // Remove the '00'
+                    }
+                }
+                e.target.value = formattedValue;
+            }
+
+            // Recalculate Pro Rata
+            calculateProRata();
         });
+
 
         // The date input `input` listener is no longer needed for formatting
         // as Flatpickr handles the date format and validation
