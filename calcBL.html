@@ -89,8 +89,10 @@
                 Insira o valor da fatura da BL:
             </p>
             <input
-                type="text" inputmode="decimal" id="valorFatura"
-                placeholder="R$ 0,00" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 interactive-element"
+                type="text"
+                inputmode="decimal"
+                id="valorFatura"
+                placeholder="0,00" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 interactive-element"
             >
         </div>
 
@@ -276,29 +278,32 @@
             proRataValueDisplay.innerText = `R$ ${proRataCalculated.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         }
 
-        // Add event listeners
+        // Add event listeners for valorFaturaInput
         valorFaturaInput.addEventListener('input', function (e) {
             let value = e.target.value;
 
             // Remove all non-numeric characters except comma
             value = value.replace(/[^0-9,]/g, '');
 
-            // Handle comma as decimal separator
+            // Ensure only one comma and limit to two decimal places
             const parts = value.split(',');
             if (parts.length > 2) {
-                value = parts[0] + ',' + parts.slice(1).join(''); // Allow only one comma
+                value = parts[0] + ',' + parts.slice(1).join('');
             }
-
-            // Limit to two decimal places after the comma
             if (parts.length === 2 && parts[1].length > 2) {
                 value = parts[0] + ',' + parts[1].substring(0, 2);
             }
+            e.target.value = value; // Update input with cleaned value
+            calculateProRata(); // Calculate with current (unformatted) value
+        });
 
-            // Convert to a number for proper formatting
-            let numericValue = parseFloat(value.replace(',', '.')) || 0; // Use parseFloat with dot for conversion
+        valorFaturaInput.addEventListener('blur', function(e) {
+            let value = e.target.value;
 
-            // Format as Brazilian currency
-            // This formatter will add thousands separators and decimal comma automatically
+            // Remove all non-numeric characters except comma, then replace comma with dot
+            let numericValue = parseFloat(value.replace(',', '.')) || 0;
+
+            // Format as Brazilian currency when the input loses focus
             const formatter = new Intl.NumberFormat('pt-BR', {
                 style: 'currency',
                 currency: 'BRL',
@@ -306,28 +311,21 @@
                 maximumFractionDigits: 2
             });
 
-            // If the input is just "R$", "R$ 0", or empty, clear it or set to "R$ 0,00"
-            // This prevents an awkward "R$ NaN" or similar display
-            if (value === '' || value === ',' || numericValue === 0 && (value !== '0' && value !== '0,' && value !== '0,0' && value !== '0.0')) {
-                e.target.value = ''; // Keep input empty if user deletes everything
+            if (value === '') {
+                e.target.value = ''; // Keep empty if user leaves it empty
             } else {
-                 let formattedValue = formatter.format(numericValue);
-
-                // Preserve decimal part while typing if user is still entering it
-                // e.g., if user types "123,", keep "R$ 123,"
-                if (value.endsWith(',')) {
-                    // Check if the formatted value already includes the comma and 00 cents.
-                    // If it does, we need to manually remove the '00' to allow typing after comma.
-                    // This is a bit of a hack as toLocaleString adds trailing zeros
-                    if (formattedValue.endsWith(',00')) {
-                        formattedValue = formattedValue.slice(0, -2); // Remove the '00'
-                    }
-                }
-                e.target.value = formattedValue;
+                e.target.value = formatter.format(numericValue);
             }
+            calculateProRata(); // Recalculate after formatting
+        });
 
-            // Recalculate Pro Rata
-            calculateProRata();
+        valorFaturaInput.addEventListener('focus', function(e) {
+            // When user focuses, remove currency formatting to allow easy editing
+            let value = e.target.value;
+            value = value.replace('R$', '').replace(/\./g, '').replace(',', '.'); // Convert to a raw number string with dot
+            let numericValue = parseFloat(value) || 0;
+            // Display as a plain number, e.g., "123.45" or "123,45"
+            e.target.value = numericValue.toLocaleString('pt-BR', {useGrouping: false, minimumFractionDigits: 2, maximumFractionDigits: 2});
         });
 
 
