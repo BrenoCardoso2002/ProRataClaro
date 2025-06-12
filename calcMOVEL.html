@@ -41,7 +41,7 @@
         input[type="radio"] + label {
             display: inline-flex; /* Para centralizar o texto */
             align-items: center;
-            justify-content: center; /* Corrected typo: justify-content */
+            justify-content: center;
             min-width: 48px; /* Largura da pílula */
             height: 32px; /* Altura da pílula */
             padding: 4px 12px; /* Espaçamento interno */
@@ -88,11 +88,14 @@
                 Insira o valor da fatura da MÓVEL:
             </p>
             <input
-                type="text"
-                id="valorFatura"
-                placeholder="Valor da fatura..."
-                class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 interactive-element"
-            >
+        type="text"
+        id="valorFatura"
+        placeholder="Valor da fatura..."
+        class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 interactive-element text-left"
+        inputmode="numeric"
+        pattern="[0-9]*"
+        maxlength="15"
+    >
         </div>
 
         <div class="mb-8">
@@ -100,14 +103,13 @@
                 Insira a data de instalação:
             </p>
             <input
-                type="text"
+                type="date"
                 id="dataInstalacao"
-                placeholder="DD/MM/AAAA"
                 class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 interactive-element"
             >
             <span id="dataError" class="text-red-500 text-sm mt-1 block h-4"></span>
         </div>
-
+        
         <p class="text-gray-700 font-medium text-lg mb-2">
             Escolha a data de vencimento:
         </p>
@@ -197,16 +199,21 @@
         function calculateProRata() {
             if (!proRataData) {
                 console.log('Dados Pro Rata ainda não carregados.');
-                // If data isn't loaded, try to fetch it. This ensures if user types then clicks radio, it works.
-                fetchProRataData();
+                resetProRataDisplay();
                 return;
             }
 
             // Pega o valor da fatura
-            let valorFaturaStr = valorFaturaInput.value.replace(',', '.'); // Substitui vírgula por ponto
-            const valorFatura = parseFloat(valorFaturaStr);
+            // Clean the input from 'R$', '.', and replace ',' with '.' for parseFloat
+            const valorFaturaClean = valorFaturaInput.value
+                .replace('R$', '')
+                .replace(/\./g, '')
+                .replace(',', '.')
+                .trim();
+            
+            const valorFatura = parseFloat(valorFaturaClean);
 
-            // Pega a data de instalação
+            // Pega a data de instalação (YYYY-MM-DD from type="date")
             const dataInstalacaoStr = dataInstalacaoInput.value;
 
             // Pega o dia selecionado no radio button
@@ -214,20 +221,20 @@
             const selectedDayKey = selectedRadio ? selectedRadio.value : null;
 
             // Valida as entradas antes de calcular
-            if (isNaN(valorFatura) || valorFatura <= 0 || dataInstalacaoStr.length !== 10 || dataErrorSpan.innerText !== '' || !selectedDayKey) {
+            if (isNaN(valorFatura) || valorFatura <= 0 || !dataInstalacaoStr || dataErrorSpan.innerText !== '' || !selectedDayKey) {
                 resetProRataDisplay();
                 return;
             }
 
-            // Parseia a data de instalação para um objeto Date
-            const parts = dataInstalacaoStr.split('/');
-            const dayInst = parseInt(parts[0], 10);
+            // Parseia a data de instalação para um objeto Date (from YYYY-MM-DD)
+            const parts = dataInstalacaoStr.split('-');
+            const yearInst = parseInt(parts[0], 10);
             const monthInst = parseInt(parts[1], 10);
-            const yearInst = parseInt(parts[2], 10);
+            const dayInst = parseInt(parts[2], 10);
             const instalationDate = new Date(yearInst, monthInst - 1, dayInst);
 
             // Pega o dia de fechamento do JSON (AGORA USANDO "MOVEL" PARA ESTA PÁGINA)
-            const closingDay = proRataData.MOVEL[selectedDayKey]; // <-- CHANGED from BL to MOVEL
+            const closingDay = proRataData.MOVEL[selectedDayKey];
 
             if (closingDay === undefined) {
                 console.error('Dia de fechamento não encontrado para a opção selecionada:', selectedDayKey);
@@ -259,92 +266,120 @@
             proRataValueDisplay.innerText = `R$ ${proRataCalculated.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         }
 
-        // Add event listeners
-        valorFaturaInput.addEventListener('input', function (e) {
-            let value = e.target.value;
+        // --- NEW JAVASCRIPT FOR CURRENCY FORMATTING ---
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set initial value when the page loads
+            valorFaturaInput.value = 'R$ 0,00';
 
-            // Remove all characters that are not numbers or comma
-            value = value.replace(/[^0-9,]/g, '');
+            valorFaturaInput.addEventListener('input', function(event) {
+                let value = valorFaturaInput.value;
 
-            // Allow only one comma and limit to two decimal places
-            const parts = value.split(',');
-            if (parts.length > 2) {
-                value = parts[0] + ',' + parts.slice(1).join('');
+                // 1. Remove all non-numeric characters (including 'R$', '.')
+                value = value.replace(/\D/g, '');
+
+                if (value === '') {
+                    valorFaturaInput.value = '';
+                    calculateProRata(); // Recalculate if cleared
+                    return;
+                }
+
+                // 2. Convert to a number and format as currency
+                // We treat the input as cents/centavos by dividing by 100
+                let numberValue = parseInt(value, 10) / 100;
+
+                // Use Intl.NumberFormat for robust currency formatting
+                const formatter = new Intl.NumberFormat('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL',
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+
+                // Format the number
+                let formattedValue = formatter.format(numberValue);
+
+                // Update the input field
+                valorFaturaInput.value = formattedValue;
+                calculateProRata(); // Recalculate on input change
+            });
+
+            valorFaturaInput.addEventListener('blur', function() {
+                let value = valorFaturaInput.value;
+                if (value === '' || value === 'R$') {
+                    valorFaturaInput.value = 'R$ 0,00';
+                } else {
+                    // Re-apply formatting just in case something went wrong or user typed something weird
+                    value = value.replace(/\D/g, ''); // Clean to only digits
+                    if (value === '') {
+                        valorFaturaInput.value = 'R$ 0,00';
+                        calculateProRata();
+                        return;
+                    }
+                    let numberValue = parseInt(value, 10) / 100;
+                    const formatter = new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
+                    valorFaturaInput.value = formatter.format(numberValue);
+                }
+                calculateProRata(); // Recalculate on blur
+            });
+        });
+        // --- END NEW JAVASCRIPT FOR CURRENCY FORMATTING ---
+
+        // Event listener for type="date" input
+        dataInstalacaoInput.addEventListener('input', function(e) {
+            if (e.target.value) {
+                calculateProRata();
+                dataErrorSpan.innerText = '';
+                e.target.classList.remove('border-red-500');
+            } else {
+                resetProRataDisplay();
             }
-            if (parts.length === 2 && parts[1].length > 2) {
-                value = parts[0] + ',' + parts[1].substring(0, 2);
-            }
-
-            e.target.value = value;
-            calculateProRata(); // Calculate on input change
         });
 
-        dataInstalacaoInput.addEventListener('input', function (e) {
-            let value = e.target.value;
-            dataErrorSpan.innerText = ''; // Clear previous errors
-            e.target.classList.remove('border-red-500'); // Remove error border
-
-            // Remove all characters that are not numbers
-            value = value.replace(/\D/g, '');
-
-            // Add slashes automatically
-            if (value.length > 2) {
-                value = value.substring(0, 2) + '/' + value.substring(2);
-            }
-            if (value.length > 5) {
-                value = value.substring(0, 5) + '/' + value.substring(5);
-            }
-
-            // Limit the total string length to 10 characters (DD/MM/YYYY)
-            if (value.length > 10) {
-                value = value.substring(0, 10);
-            }
-
-            e.target.value = value;
-            calculateProRata(); // Calculate immediately on input, even if partial
-        });
-
+        // Blur event listener for dataInstalacaoInput (with YYYY-MM-DD format)
         dataInstalacaoInput.addEventListener('blur', function (e) {
             const value = e.target.value;
             dataErrorSpan.innerText = '';
             e.target.classList.remove('border-red-500');
 
-            if (value.length === 10) {
-                const parts = value.split('/');
-                const day = parseInt(parts[0], 10);
+            if (value) {
+                const parts = value.split('-');
+                const year = parseInt(parts[0], 10);
                 const month = parseInt(parts[1], 10);
-                const year = parseInt(parts[2], 10);
+                const day = parseInt(parts[2], 10);
 
                 const inputDate = new Date(year, month - 1, day);
 
-                // Check if the date is invalid (e.g., Feb 30th)
                 if (isNaN(inputDate.getTime()) || inputDate.getDate() !== day || inputDate.getMonth() !== (month - 1) || inputDate.getFullYear() !== year) {
                     dataErrorSpan.innerText = 'Data inválida.';
                     e.target.classList.add('border-red-500');
-                    resetProRataDisplay(); // Reset display if date is invalid
+                    resetProRataDisplay();
                     return;
                 }
 
                 const currentDate = new Date();
-                currentDate.setHours(0, 0, 0, 0); // Zero out time for comparison
+                currentDate.setHours(0, 0, 0, 0);
                 inputDate.setHours(0, 0, 0, 0);
 
                 const diffTime = currentDate.getTime() - inputDate.getTime();
-                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); // Use floor for full days difference
+                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
-                // Check if date is older than 7 days; future dates are now allowed.
-                if (diffDays > 7) {
+                // June 12, 2025 (current date)
+                const sevenDaysAgo = new Date(currentDate);
+                sevenDaysAgo.setDate(currentDate.getDate() - 7);
+
+                if (inputDate < sevenDaysAgo) { // Check if inputDate is *before* 7 days ago
                     dataErrorSpan.innerText = 'Data não pode ser mais antiga que 7 dias.';
                     e.target.classList.add('border-red-500');
-                    resetProRataDisplay(); // Reset display if date is too old
+                    resetProRataDisplay();
                 } else {
-                    calculateProRata(); // Calculate if the date is valid and within range
+                    calculateProRata();
                 }
-            } else if (value.length > 0) { // If something was typed but not a full date
-                dataErrorSpan.innerText = 'Formato de data inválido (DD/MM/AAAA).';
-                e.target.classList.add('border-red-500');
-                resetProRataDisplay();
-            } else { // If input is empty after blur
+            } else {
                 resetProRataDisplay();
             }
         });
@@ -352,12 +387,9 @@
         // Add an event listener for the radio buttons
         radioButtonsContainer.addEventListener('change', function(e) {
             if (e.target.name === 'days' && e.target.type === 'radio') {
-                fetchProRataData(); // Fetch data and recalculate when a radio button is selected
+                fetchProRataData();
             }
         });
-
-        // Initial fetch on page load
-        document.addEventListener('DOMContentLoaded', fetchProRataData);
     </script>
 </body>
 </html>
