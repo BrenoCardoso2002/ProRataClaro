@@ -92,7 +92,8 @@
                 type="text"
                 inputmode="decimal"
                 id="valorFatura"
-                placeholder="0,00" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 interactive-element"
+                placeholder="Valor da fatura..."
+                class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 interactive-element"
             >
         </div>
 
@@ -215,11 +216,7 @@
             }
 
             // Pega o valor da fatura
-            // Remove 'R$', dots, and replace comma with dot for calculation
-            let valorFaturaStr = valorFaturaInput.value
-                                    .replace('R$', '')
-                                    .replace(/\./g, '') // Remove thousands separators
-                                    .replace(',', '.'); // Replace comma with dot for parseFloat
+            let valorFaturaStr = valorFaturaInput.value.replace(',', '.'); // Substitui vírgula por ponto
             const valorFatura = parseFloat(valorFaturaStr);
 
             // Pega a data de instalação
@@ -278,14 +275,14 @@
             proRataValueDisplay.innerText = `R$ ${proRataCalculated.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         }
 
-        // Add event listeners for valorFaturaInput
+        // Add event listeners
         valorFaturaInput.addEventListener('input', function (e) {
             let value = e.target.value;
 
-            // Remove all non-numeric characters except comma
+            // Remove all characters that are not numbers or comma
             value = value.replace(/[^0-9,]/g, '');
 
-            // Ensure only one comma and limit to two decimal places
+            // Allow only one comma and limit to two decimal places
             const parts = value.split(',');
             if (parts.length > 2) {
                 value = parts[0] + ',' + parts.slice(1).join('');
@@ -293,41 +290,10 @@
             if (parts.length === 2 && parts[1].length > 2) {
                 value = parts[0] + ',' + parts[1].substring(0, 2);
             }
-            e.target.value = value; // Update input with cleaned value
-            calculateProRata(); // Calculate with current (unformatted) value
+
+            e.target.value = value;
+            calculateProRata(); // Calculate on input change
         });
-
-        valorFaturaInput.addEventListener('blur', function(e) {
-            let value = e.target.value;
-
-            // Remove all non-numeric characters except comma, then replace comma with dot
-            let numericValue = parseFloat(value.replace(',', '.')) || 0;
-
-            // Format as Brazilian currency when the input loses focus
-            const formatter = new Intl.NumberFormat('pt-BR', {
-                style: 'currency',
-                currency: 'BRL',
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            });
-
-            if (value === '') {
-                e.target.value = ''; // Keep empty if user leaves it empty
-            } else {
-                e.target.value = formatter.format(numericValue);
-            }
-            calculateProRata(); // Recalculate after formatting
-        });
-
-        valorFaturaInput.addEventListener('focus', function(e) {
-            // When user focuses, remove currency formatting to allow easy editing
-            let value = e.target.value;
-            value = value.replace('R$', '').replace(/\./g, '').replace(',', '.'); // Convert to a raw number string with dot
-            let numericValue = parseFloat(value) || 0;
-            // Display as a plain number, e.g., "123.45" or "123,45"
-            e.target.value = numericValue.toLocaleString('pt-BR', {useGrouping: false, minimumFractionDigits: 2, maximumFractionDigits: 2});
-        });
-
 
         // The date input `input` listener is no longer needed for formatting
         // as Flatpickr handles the date format and validation
