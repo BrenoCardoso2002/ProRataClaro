@@ -74,14 +74,14 @@
 <body class="bg-gray-100 flex items-center justify-center min-h-screen p-4 sm:p-6">
 
     <div class="bg-white p-8 rounded-2xl shadow-xl max-w-sm w-full text-center">
-         <a href="Index.html">
-    <img
-        src="./logoProRata.jpg"
-        alt="Logo ProRata"
-        class="w-32 h-32 mx-auto mb-6 rounded-full object-cover shadow-lg"
-        onerror="this.onerror=null;this.src='https://placehold.co/128x128/cccccc/333333?text=Imagem+indisponível';"
-    >
-</a>
+        <a href="Index.html">
+            <img
+                src="./logoProRata.jpg"
+                alt="Logo ProRata"
+                class="w-32 h-32 mx-auto mb-6 rounded-full object-cover shadow-lg"
+                onerror="this.onerror=null;this.src='https://placehold.co/128x128/cccccc/333333?text=Imagem+indisponível';"
+            >
+        </a>
 
         <h1 class="text-3xl font-bold text-gray-800 mb-8">ProRata</h1>
 
@@ -90,14 +90,14 @@
                 Insira o valor da fatura da MÓVEL:
             </p>
             <input
-        type="text"
-        id="valorFatura"
-        placeholder="Valor da fatura..."
-        class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 interactive-element text-left"
-        inputmode="numeric"
-        pattern="[0-9]*"
-        maxlength="15"
-    >
+                type="text"
+                id="valorFatura"
+                placeholder="Valor da fatura..."
+                class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 interactive-element text-left"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                maxlength="15"
+            >
         </div>
 
         <div class="mb-8">
@@ -205,8 +205,8 @@
                 return;
             }
 
-            // Pega o valor da fatura
-            // Clean the input from 'R$', '.', and replace ',' with '.' for parseFloat
+            // Obtém o valor da fatura
+            // Limpa o input de 'R$', '.', e substitui ',' por '.' para parseFloat
             const valorFaturaClean = valorFaturaInput.value
                 .replace('R$', '')
                 .replace(/\./g, '')
@@ -215,10 +215,10 @@
             
             const valorFatura = parseFloat(valorFaturaClean);
 
-            // Pega a data de instalação (YYYY-MM-DD from type="date")
+            // Obtém a data de instalação (YYYY-MM-DD do type="date")
             const dataInstalacaoStr = dataInstalacaoInput.value;
 
-            // Pega o dia selecionado no radio button
+            // Obtém o dia selecionado no radio button
             const selectedRadio = document.querySelector('input[name="days"]:checked');
             const selectedDayKey = selectedRadio ? selectedRadio.value : null;
 
@@ -228,15 +228,15 @@
                 return;
             }
 
-            // Parseia a data de instalação para um objeto Date (from YYYY-MM-DD)
+            // Analisa a data de instalação para um objeto Date (YYYY-MM-DD)
             const parts = dataInstalacaoStr.split('-');
             const yearInst = parseInt(parts[0], 10);
-            const monthInst = parseInt(parts[1], 10);
+            const monthInst = parseInt(parts[1], 10); 
             const dayInst = parseInt(parts[2], 10);
             const instalationDate = new Date(yearInst, monthInst - 1, dayInst);
 
-            // Pega o dia de fechamento do JSON (AGORA USANDO "MOVEL" PARA ESTA PÁGINA)
-            const closingDay = proRataData.MOVEL[selectedDayKey];
+            // Obtém o dia de fechamento do JSON (AGORA USANDO "MOVEL" PARA ESTA PÁGINA)
+            const closingDay = proRataData.MOVEL[selectedDayKey]; // ALTERADO AQUI DE "BL" PARA "MOVEL"
 
             if (closingDay === undefined) {
                 console.error('Dia de fechamento não encontrado para a opção selecionada:', selectedDayKey);
@@ -246,50 +246,66 @@
 
             let closingDate = new Date(instalationDate.getFullYear(), instalationDate.getMonth(), closingDay);
 
-            // If the calculated closing date is before or on the installation date (in the same month),
-            // assume it's for the next month's cycle.
+            // Se a data de fechamento calculada for anterior ou igual à data de instalação (no mesmo mês),
+            // assume-se que é para o ciclo do próximo mês.
             if (closingDate <= instalationDate) {
                 closingDate = new Date(instalationDate.getFullYear(), instalationDate.getMonth() + 1, closingDay);
             }
 
-            // Calculate the difference in days
+            // Calcula a diferença em dias
             const diffTime = closingDate.getTime() - instalationDate.getTime();
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); // Difference in days
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); // Diferença em dias
 
             if (diffDays < 0) {
                 resetProRataDisplay();
                 return;
             }
 
-            // Calculate Pro Rata
-            const proRataCalculated = (valorFatura / 30) * diffDays;
+            // Calcula o Pro Rata
+            let proRataCalculated = (valorFatura / 30) * diffDays;
 
-            // Format and display the result
+            // --- INÍCIO DA NOVA LÓGICA DE VALOR VINDO NA PROXIMA ---
+            const fiftyPercentOfFatura = valorFatura * 0.5; // 50% do valor da fatura
+            if (proRataCalculated < fiftyPercentOfFatura) {
+                proRataCalculated = proRataCalculated + valorFatura;
+            }
+            // --- FIM DA NOVA LÓGICA ---
+
+            // Formata e exibe o resultado
             proRataValueDisplay.innerText = `R$ ${proRataCalculated.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+            // --- NOVO IF PARA ALERTA ---
+            if (proRataCalculated >= valorFatura) {
+                // Calcula a data de vencimento real para o alerta
+                // É a data de vencimento escolhida, mas no próximo mês do ciclo de fechamento
+                const nextInvoiceDueDate = new Date(closingDate.getFullYear(), closingDate.getMonth() + 1, parseInt(selectedDayKey, 10));
+                alert("Esse valor de pro rata virá na próxima fatura com vencimento em: " + nextInvoiceDueDate.toLocaleDateString('pt-BR'));
+            }
+            // --- FIM DO NOVO IF ---
         }
 
-        // --- NEW JAVASCRIPT FOR CURRENCY FORMATTING ---
+        // --- JAVASCRIPT PARA FORMATAÇÃO DE MOEDA ---
         document.addEventListener('DOMContentLoaded', function() {
-            // Set initial value when the page loads
+            // Define o valor inicial quando a página carrega
             valorFaturaInput.value = 'R$ 0,00';
 
             valorFaturaInput.addEventListener('input', function(event) {
                 let value = valorFaturaInput.value;
 
-                // 1. Remove all non-numeric characters (including 'R$', '.')
+                // 1. Remove todos os caracteres não numéricos (incluindo 'R$', '.')
                 value = value.replace(/\D/g, '');
 
                 if (value === '') {
                     valorFaturaInput.value = '';
-                    calculateProRata(); // Recalculate if cleared
+                    calculateProRata(); // Recalcula se o campo for limpo
                     return;
                 }
 
-                // 2. Convert to a number and format as currency
-                // We treat the input as cents/centavos by dividing by 100
+                // 2. Converte para um número e formata como moeda
+                // Tratamos o input como centavos dividindo por 100
                 let numberValue = parseInt(value, 10) / 100;
 
-                // Use Intl.NumberFormat for robust currency formatting
+                // Usa Intl.NumberFormat para formatação robusta de moeda
                 const formatter = new Intl.NumberFormat('pt-BR', {
                     style: 'currency',
                     currency: 'BRL',
@@ -297,12 +313,12 @@
                     maximumFractionDigits: 2
                 });
 
-                // Format the number
+                // Formata o número
                 let formattedValue = formatter.format(numberValue);
 
-                // Update the input field
+                // Atualiza o campo de input
                 valorFaturaInput.value = formattedValue;
-                calculateProRata(); // Recalculate on input change
+                calculateProRata(); // Recalcula na mudança do input
             });
 
             valorFaturaInput.addEventListener('blur', function() {
@@ -310,8 +326,8 @@
                 if (value === '' || value === 'R$') {
                     valorFaturaInput.value = 'R$ 0,00';
                 } else {
-                    // Re-apply formatting just in case something went wrong or user typed something weird
-                    value = value.replace(/\D/g, ''); // Clean to only digits
+                    // Reaplica a formatação caso algo tenha dado errado ou o usuário digitou algo estranho
+                    value = value.replace(/\D/g, ''); // Limpa para apenas dígitos
                     if (value === '') {
                         valorFaturaInput.value = 'R$ 0,00';
                         calculateProRata();
@@ -326,12 +342,12 @@
                     });
                     valorFaturaInput.value = formatter.format(numberValue);
                 }
-                calculateProRata(); // Recalculate on blur
+                calculateProRata(); // Recalcula ao sair do foco
             });
         });
-        // --- END NEW JAVASCRIPT FOR CURRENCY FORMATTING ---
+        // --- FIM DO NOVO JAVASCRIPT PARA FORMATAÇÃO DE MOEDA ---
 
-        // Event listener for type="date" input
+        // Listener de evento para o input type="date"
         dataInstalacaoInput.addEventListener('input', function(e) {
             if (e.target.value) {
                 calculateProRata();
@@ -342,7 +358,7 @@
             }
         });
 
-        // Blur event listener for dataInstalacaoInput (with YYYY-MM-DD format)
+        // Listener de evento blur para dataInstalacaoInput (com formato YYYY-MM-DD)
         dataInstalacaoInput.addEventListener('blur', function (e) {
             const value = e.target.value;
             dataErrorSpan.innerText = '';
@@ -370,11 +386,10 @@
                 const diffTime = currentDate.getTime() - inputDate.getTime();
                 const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
-                // June 12, 2025 (current date)
                 const sevenDaysAgo = new Date(currentDate);
                 sevenDaysAgo.setDate(currentDate.getDate() - 7);
 
-                if (inputDate < sevenDaysAgo) { // Check if inputDate is *before* 7 days ago
+                if (inputDate < sevenDaysAgo) { // Verifica se inputDate é *anterior* a 7 dias atrás
                     dataErrorSpan.innerText = 'Data não pode ser mais antiga que 7 dias.';
                     e.target.classList.add('border-red-500');
                     resetProRataDisplay();
@@ -386,7 +401,7 @@
             }
         });
 
-        // Add an event listener for the radio buttons
+        // Adiciona um listener de evento para os radio buttons
         radioButtonsContainer.addEventListener('change', function(e) {
             if (e.target.name === 'days' && e.target.type === 'radio') {
                 fetchProRataData();
